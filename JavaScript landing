@@ -1,0 +1,65 @@
+// Smooth Scroll Function
+document.querySelectorAll('nav ul li a').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('href').substring(1);
+        const targetElement = document.getElementById(targetId);
+        if (targetElement) {
+            targetElement.scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+});
+
+// Property Modal Functionality
+const properties = [
+    {
+        title: "Квартира в центре",
+        description: "Современная квартира с двумя спальнями и балконом.",
+        price: "Цена: 5,000,000₽",
+        location: "Москва, ул. Примерная",
+        image: "property1.jpg"
+    },
+    {
+        title: "Коттедж за городом",
+        description: "Просторный коттедж с участком и гаражом.",
+        price: "Цена: 8,000,000₽",
+        location: "Подмосковье",
+        image: "property2.jpg"
+    },
+    {
+        title: "Студия на окраине",
+        description: "Уютная студия в спокойном районе.",
+        price: "Цена: 3,000,000₽",
+        location: "Санкт-Петербург, ул. Примерная",
+        image: "property3.jpg"
+    },
+    // Add more properties as needed
+];
+
+const modal = document.getElementById('propertyModal');
+const modalTitle = document.getElementById('modalTitle');
+const modalDescription = document.getElementById('modalDescription');
+const modalPrice = document.getElementById('modalPrice');
+const modalLocation = document.getElementById('modalLocation');
+const closeModal = document.querySelector('.close');
+
+document.querySelectorAll('.property button').forEach((button, index) => {
+    button.addEventListener('click', () => {
+        const property = properties[index];
+        modalTitle.textContent = property.title;
+        modalDescription.textContent = property.description;
+        modalPrice.textContent = property.price;
+        modalLocation.textContent = property.location;
+        modal.style.display = 'block';
+    });
+});
+
+closeModal.addEventListener('click', () => {
+    modal.style.display = 'none';
+});
+
+window.addEventListener('click', (event) => {
+    if (event.target == modal) {
+        modal.style.display = 'none';
+    }
+});
