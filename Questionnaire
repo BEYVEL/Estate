@@ -1,0 +1,122 @@
+import tkinter as tk
+from tkinter import messagebox, ttk
+
+class QuestionnaireApp:
+    def __init__(self, master):
+        self.master = master
+        self.master.title("🏡 Real Estate Preference Questionnaire")
+        self.master.geometry("500x800")
+        self.master.config(bg="#f7f9fc")
+
+        self.current_question = 0
+        self.preferences = {}
+
+        self.create_widgets()
+        self.show_question()
+
+    def create_widgets(self):
+        # Title
+        self.title_label = tk.Label(self.master, text="🏡 Real Estate Preference Questionnaire", font=("Helvetica", 22, "bold"), bg="#f7f9fc", fg="#333")
+        self.title_label.pack(pady=30)
+
+        # Progress Bar
+        self.progress_bar = ttk.Progressbar(self.master, orient='horizontal', length=400, mode='determinate')
+        self.progress_bar.pack(pady=10)
+
+        # Question Frame
+        self.question_frame = tk.Frame(self.master, bg="#ffffff", padx=20, pady=20)
+        self.question_frame.pack(padx=10, pady=10, fill='both', expand=True)
+
+        # Submit Button
+        self.submit_button = tk.Button(self.master, text="Next", command=self.next_question, bg="#4CAF50", fg="white", font=("Helvetica", 14, "bold"), padx=10, pady=5)
+        self.submit_button.pack(pady=20)
+
+        # Info Label
+        self.info_label = tk.Label(self.master, text="Your preferences help us find the best options for you!", font=("Helvetica", 10), bg="#f7f9fc", fg="#666")
+        self.info_label.pack(side='bottom', pady=10)
+
+        # Questions with varied input types
+        self.questions = [
+            ("💰 Budget (in currency units):", "Enter your maximum budget.", "entry"),
+            ("📍 Preferred Locations:", "Where would you like to live?", "entry"),
+            ("🎨 Design Preferences:", "What styles do you prefer?", "entry"),
+            ("🛏️ Number of Bedrooms:", "How many bedrooms do you need?", "dropdown", ["1", "2", "3", "4+", "Open concept"]),
+            ("🚆 Max Commute Time (in minutes):", "What's the longest commute you're willing to have?", "slider"),
+            ("🏋️ Desired Amenities:", "What amenities are important to you?", "checkbox", ["Gym", "Pool", "Parking", "Pet-friendly", "Garden"]),
+            ("🔍 Other Preferences:", "Any additional requirements?", "entry")
+        ]
+
+        # Entry variable
+        self.entries = []
+
+    def show_question(self):
+        # Clear previous widgets
+        for widget in self.question_frame.winfo_children():
+            widget.destroy()
+
+        # Create and display the current question
+        question_text, tooltip, input_type, *options = self.questions[self.current_question]
+        label = tk.Label(self.question_frame, text=question_text, font=("Helvetica", 12), bg="#ffffff")
+        label.pack(anchor='w', pady=5)
+
+        if input_type == "entry":
+            var = tk.StringVar()
+            entry = tk.Entry(self.question_frame, textvariable=var, font=("Helvetica", 12), width=30, bd=2, relief="solid")
+            entry.pack(pady=5, fill='x')
+            self.entries.append(var)
+
+        elif input_type == "dropdown":
+            var = tk.StringVar()
+            dropdown = ttk.Combobox(self.question_frame, textvariable=var, values=options, font=("Helvetica", 12), state='readonly')
+            dropdown.pack(pady=5, fill='x')
+            dropdown.current(0)  # Set default selection
+            self.entries.append(var)
+
+        elif input_type == "slider":
+            var = tk.DoubleVar()
+            slider = tk.Scale(self.question_frame, from_=0, to=60, variable=var, orient='horizontal', length=300)
+            slider.pack(pady=5)
+            self.entries.append(var)
+
+        elif input_type == "checkbox":
+            var = []
+            for option in options[0]:  # options[0] is the list of options
+                chk_var = tk.BooleanVar()
+                checkbox = tk.Checkbutton(self.question_frame, text=option, variable=chk_var, bg="#ffffff", font=("Helvetica", 12))
+                checkbox.pack(anchor='w')
+                var.append(chk_var)
+            self.entries.append(var)
+
+        # Tooltip
+        tooltip_label = tk.Label(self.question_frame, text=tooltip, font=("Helvetica", 10), bg="#ffffff", fg="#777")
+        tooltip_label.pack(anchor='w', pady=5)
+
+        # Update progress bar
+        self.progress_bar['value'] = (self.current_question + 1) / len(self.questions) * 100
+
+    def next_question(self):
+        # Save the current entry
+        if self.current_question < len(self.questions):
+            self.preferences[self.questions[self.current_question][0]] = self.entries[self.current_question].get() if isinstance(self.entries[self.current_question], tk.StringVar) else [var.get() for var in self.entries[self.current_question]]
+
+            self.current_question += 1
+
+        if self.current_question < len(self.questions):
+            self.show_question()
+        else:
+            self.submit_preferences()
+
+    def submit_preferences(self):
+        # Collect all preferences
+        preferences = {q[0]: var.get() if isinstance(var, tk.StringVar) else [chk.get() for chk in var] for q, var in zip(self.questions, self.entries)}
+        messagebox.showinfo("Preferences Submitted", "Thank you for providing your preferences!")
+        print(preferences)  # For debugging or further processing
+
+        # Close the application
+        self.master.quit()
+
+# Run the application
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = QuestionnaireApp(root)
+    root.mainloop()
