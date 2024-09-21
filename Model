@@ -22,28 +22,28 @@ ratings = pd.DataFrame({
     'rating': [5, 3]
 })
 
-# Step 1: Normalize numerical features for similarity calculation
+# Normalize numerical features
 scaler = StandardScaler()
 customers[['budget', 'work_location_x', 'work_location_y']] = scaler.fit_transform(customers[['budget', 'work_location_x', 'work_location_y']])
 apartments[['price', 'location_x', 'location_y']] = scaler.fit_transform(apartments[['price', 'location_x', 'location_y']])
 
-# Step 2: One-hot encode categorical features (like design preferences)
+# One-hot encode categorical features
 encoder = OneHotEncoder()
 design_styles_encoded = encoder.fit_transform(customers[['design_preferences']]).toarray()
 customers = pd.concat([customers, pd.DataFrame(design_styles_encoded)], axis=1)
 
-# Step 3: Create additional features for customers and apartments
+# Create additional features for better recommendations
 customers['num_bedrooms'] = customers['num_bedrooms'].fillna(1)  # Default if missing
 apartments['num_bedrooms'] = apartments['num_bedrooms'].fillna(1)
 
-# Step 4: Create feature vectors for apartments
+# Create feature vectors for apartments
 def create_feature_vector(row):
     return np.concatenate([row[['location_x', 'location_y', 'price', 'num_bedrooms']],
-                           np.array([1 if style in row['design_preferences'] else 0 for style in encoder.categories_[0]])])
+                            np.array([1 if style in row['design_preferences'] else 0 for style in encoder.categories_[0]])])
 
 apartments['feature_vector'] = apartments.apply(create_feature_vector, axis=1)
 
-# Step 5: Calculate distance using Haversine formula for geographical distance
+# Calculate distance using the Haversine formula
 def calculate_distance(row, customer_location):
     apartment_location = (row['location_y'], row['location_x'])
     return great_circle(customer_location, apartment_location).meters
@@ -55,17 +55,17 @@ def add_distance_features(customers, apartments):
 
 add_distance_features(customers, apartments)
 
-# Step 6: User feedback loop to adjust ratings
+# User feedback loop
 def add_feedback(customer_id, apartment_id, rating):
     global ratings
     new_rating = pd.DataFrame({'customer_id': [customer_id], 'apartment_id': [apartment_id], 'rating': [rating]})
     ratings = pd.concat([ratings, new_rating], ignore_index=True)
 
-# Step 7: Enhanced recommendation function (cosine similarity-based)
+# Enhanced recommendation function
 def recommend_apartments(customer_id):
     customer = customers[customers['customer_id'] == customer_id]
     customer_vector = np.concatenate([customer[['budget', 'work_location_x', 'work_location_y', 'num_bedrooms']].values.flatten(),
-                                      customer[encoder.get_feature_names_out()].values.flatten()])
+                                        customer[encoder.get_feature_names_out()].values.flatten()])
 
     similarities = cosine_similarity([customer_vector], apartments['feature_vector'].tolist()).flatten()
     rated_apartments = ratings[ratings['customer_id'] == customer_id]
@@ -75,10 +75,11 @@ def recommend_apartments(customer_id):
         if apartment_id not in rated_apartments['apartment_id'].values:
             recommendations.append((apartment_id, similarity))
 
+    # Sort by similarity score (or predicted rating)
     recommendations.sort(key=lambda x: x[1], reverse=True)
-    return recommendations[:5]
+    return recommendations  # Return all recommendations sorted by fit score
 
-# Step 8: Prepare data for neural network model
+# Prepare data for neural network
 X = pd.concat([customers[['budget', 'work_location_x', 'work_location_y', 'num_bedrooms'] + list(encoder.get_feature_names_out())], 
                       apartments[['location_x', 'location_y', 'price', 'num_bedrooms']]], axis=1)
 y = ratings.pivot(index='customer_id', columns='apartment_id', values='rating').fillna(0)
@@ -86,7 +87,7 @@ y = ratings.pivot(index='customer_id', columns='apartment_id', values='rating').
 # Split data into training and testing
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Step 9: Build a more complex neural network model with regularization and dropout
+# Build a more complex neural network model
 def create_model(learning_rate=0.01):
     model = keras.Sequential([
         layers.Dense(512, activation='relu', input_shape=(X_train.shape[1],)),
@@ -99,7 +100,7 @@ def create_model(learning_rate=0.01):
     model.compile(optimizer=keras.optimizers.Adam(learning_rate=learning_rate), loss='mean_squared_error')
     return model
 
-# Hyperparameter tuning using GridSearchCV
+# Hyperparameter tuning with GridSearchCV
 model = KerasRegressor(build_fn=create_model, epochs=100, batch_size=10, verbose=0)
 param_grid = {'learning_rate': [0.001, 0.01, 0.1], 'batch_size': [10, 20, 30]}
 grid = GridSearchCV(estimator=model, param_grid=param_grid, n_jobs=-1, cv=3)
@@ -107,15 +108,18 @@ grid_result = grid.fit(X_train, y_train)
 
 print("Best parameters:", grid_result.best_params_)
 
+# Evaluate the best model
+best_model = grid_result.best_estimator_
+
 # Early stopping and learning rate scheduling
 early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
 reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5, min_lr=1e-6)
 
-# Step 10: Train the model with callbacks
-history = grid_result.best_estimator_.fit(X_train, y_train, epochs=100, validation_split=0.2, 
-                                           callbacks=[early_stopping, reduce_lr])
+# Train the model with callbacks
+history = best_model.fit(X_train, y_train, epochs=100, validation_split=0.2, 
+                          callbacks=[early_stopping, reduce_lr])
 
-# Visualize training history
+# Visualizing training history
 plt.plot(history.history['loss'], label='train')
 plt.plot(history.history['val_loss'], label='val')
 plt.title('Model Loss')
@@ -127,15 +131,22 @@ plt.show()
 # Enhanced recommendation using neural network
 def recommend_apartments_nn(customer_id):
     customer_vector = customers.loc[customers['customer_id'] == customer_id].values.flatten()
-    predicted_ratings = grid_result.best_estimator_.predict(customer_vector.reshape(1, -1))  # Reshape for single prediction
+    predicted_ratings = best_model.predict(customer_vector.reshape(1, -1))  # Reshape for single prediction
 
-    # Get top N recommendations
-    recommendations = np.argsort(predicted_ratings.flatten())[-5:][::-1]  # Get top 5
-    return apartments.iloc[recommendations]
+    # Create a list of apartments with their predicted ratings
+    recommendations = [(apartment_id, predicted_ratings[0][i]) for i, apartment_id in enumerate(apartments['apartment_id'])]
+
+    # Sort by predicted rating
+    recommendations.sort(key=lambda x: x[1], reverse=True)
+    return recommendations  # Return all recommendations sorted by predicted rating
 
 # Example usage
-recommended_apartments = recommend_apartments(1)
-print("Recommended Apartments for Customer 1:", recommended_apartments)
+all_recommended_apartments = recommend_apartments(1)
+print("Recommended Apartments for Customer 1:")
+for apartment_id, fit_score in all_recommended_apartments:
+    print(f"Apartment ID: {apartment_id}, Fit Score: {fit_score}")
 
-recommended_apartments_nn = recommend_apartments_nn(1)
-print("Recommended Apartments (NN) for Customer 1:", recommended_apartments_nn)
+all_recommended_apartments_nn = recommend_apartments_nn(1)
+print("Recommended Apartments (NN) for Customer 1:")
+for apartment_id, predicted_rating in all_recommended_apartments_nn:
+    print(f"Apartment ID: {apartment_id}, Predicted Rating: {predicted_rating}")
