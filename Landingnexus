@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nexus Home: ИИ-ассистент по подбору недвижимости</title>
+<meta name="description" content="Опишите дом мечты обычными словами. Nexus Home подберёт варианты, объяснит выбор и покажет всё рядом на карте.">
+<style>
+  :root {
+    --brand: #8c1515;
+    --brand-hi: #a51c1c;
+    --wine: #3a0a0e;
+    --bg: #ffffff;
+    --mist: #f5f1f1;
+    --ink: #1d1214;
+    --muted: #6a5a5c;
+    --line: #e8dfdf;
+    --focus: #1a5fd0;
+    --r-lg: 32px;
+    --r-md: 22px;
+    --font: "Inter Tight", "Manrope", "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, system-ui, sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #140c0d;
+      --mist: #221617;
+      --ink: #f6eded;
+      --muted: #bda3a5;
+      --line: #36292a;
+      --focus: #8ab4ff;
+      color-scheme: dark;
+    }
+  }
+
+- { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 96px; }
+  body {
+  margin: 0; font-family: var(–font); font-size: 18px; line-height: 1.55;
+  background: var(–bg); color: var(–ink); -webkit-font-smoothing: antialiased;
+  }
+  svg { display: block; max-width: 100%; }
+  a { color: inherit; }
+  h1, h2, h3, p { margin: 0; }
+  :focus-visible { outline: 3px solid var(–focus); outline-offset: 3px; border-radius: 8px; }
+  .wrap { width: min(1240px, 100% - 2 * clamp(16px, 3vw, 40px)); margin-inline: auto; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ––––– Buttons ––––– */
+.btn {
+display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+min-height: 52px; padding: 0 28px; border-radius: 999px; border: 0; cursor: pointer;
+font: 650 17px var(–font); text-decoration: none; transition: background .15s, color .15s;
+}
+.btn-brand { background: var(–brand); color: #fff; }
+.btn-brand:hover { background: var(–wine); }
+.btn-white { background: #fff; color: var(–brand); }
+.btn-white:hover { background: #f6e6e6; }
+.btn-sm { min-height: 44px; padding: 0 20px; font-size: 15px; }
+
+/* ––––– Floating nav ––––– */
+.top { position: sticky; top: 12px; z-index: 30; padding-top: 12px; }
+.pill {
+display: flex; align-items: center; gap: 16px; min-height: 64px; padding: 8px 10px 8px 22px;
+background: color-mix(in srgb, var(–bg) 94%, transparent); backdrop-filter: blur(14px);
+-webkit-backdrop-filter: blur(14px); border: 1px solid var(–line); border-radius: 999px;
+box-shadow: 0 10px 30px -18px rgba(58,10,14,.35);
+}
+.brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 750; font-size: 19px; letter-spacing: -.02em; color: var(–brand); }
+.brand svg { width: 34px; height: 34px; }
+@media (prefers-color-scheme: dark) { .brand { color: #f2bcbc; } }
+.pill nav { margin-inline: auto; }
+.pill ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 2px; }
+.pill nav a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 999px; text-decoration: none; font-size: 15px; font-weight: 600; color: var(–ink); }
+.pill nav a:hover { background: var(–mist); }
+.pill nav svg { width: 19px; height: 19px; color: var(–brand); }
+@media (prefers-color-scheme: dark) { .pill nav svg { color: #f2bcbc; } }
+.lang { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 0; border-radius: 999px; background: none; color: var(–ink); font: 600 15px var(–font); cursor: pointer; }
+.lang:hover { background: var(–mist); }
+.lang svg { width: 18px; height: 18px; }
+
+/* ––––– Hero ––––– */
+.hero {
+position: relative; overflow: hidden; background: var(–brand); color: #fff;
+width: min(1320px, 100% - 24px); margin: -76px auto 0; padding-top: 76px; border-radius: var(–r-lg);
+}
+.hero-grid {
+position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
+gap: clamp(24px, 4vw, 64px); align-items: center;
+padding: clamp(48px, 7vw, 96px) clamp(24px, 5vw, 80px) clamp(56px, 7vw, 104px);
+}
+.hero h1 { font-size: clamp(2.3rem, 4.5vw, 4rem); line-height: 1.04; letter-spacing: -.03em; font-weight: 750; text-wrap: balance; }
+.hero .lead { margin-top: 22px; max-width: 31em; font-size: clamp(1.05rem, 1.5vw, 1.2rem); color: rgba(255,255,255,.86); }
+.ask { margin-top: 34px; max-width: 580px; }
+.ask-field { display: flex; align-items: center; gap: 6px; background: #fff; color: #3a0b0b; border-radius: 999px; padding: 6px 6px 6px 24px; box-shadow: 0 22px 44px -24px rgba(0,0,0,.6); }
+.ask-field:focus-within { outline: 3px solid #fff; outline-offset: 3px; }
+.ask-field input { flex: 1; min-width: 0; min-height: 52px; border: 0; outline: 0; background: none; font: 500 18px var(–font); color: #3a0b0b; }
+.ask-field input::placeholder { color: #8c1515; opacity: .78; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.chip { min-height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,.4); background: transparent; color: #fff; font: 600 15px var(–font); cursor: pointer; }
+.chip:hover { background: rgba(255,255,255,.14); }
+
+.orbit { position: relative; width: min(100%, 460px); aspect-ratio: 1; justify-self: center; }
+.orbit-lines { position: absolute; max-width: none; width: 230%; left: -65%; top: -65%; aspect-ratio: 1; pointer-events: none; }
+.ring { position: absolute; inset: 0; }
+.ring svg { width: 100%; height: 100%; animation: spin 70s linear infinite; }
+.ring text { fill: #fff; font: 600 32px var(–font); }
+.seal { position: absolute; inset: 50% auto auto 50%; transform: translate(-50%, -50%); width: 25%; aspect-ratio: 1; border-radius: 50%; background: #fff; color: var(–brand); display: grid; place-items: center; box-shadow: 0 0 0 10px rgba(255,255,255,.16), 0 0 0 22px rgba(255,255,255,.08); }
+.seal svg { width: 62%; height: 62%; }
+.node { position: absolute; display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; border-radius: 999px; background: #fff; color: var(–brand); font-size: 14px; font-weight: 700; white-space: nowrap; box-shadow: 0 14px 30px -14px rgba(0,0,0,.55); }
+.node.n1 { left: -2%; top: 2%; }
+.node.n2 { right: -2%; bottom: 0; }
+.node.n3 { left: -2%; bottom: -5%; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ––––– Section scaffolding ––––– */
+section { padding-block: clamp(72px, 10vw, 128px); }
+h2 { font-size: clamp(1.9rem, 3.6vw, 3rem); line-height: 1.07; letter-spacing: -.028em; font-weight: 750; text-wrap: balance; max-width: 17em; }
+.sub { margin-top: 16px; max-width: 34em; color: var(–muted); font-size: 1.1rem; }
+.head-center { text-align: center; }
+.head-center h2, .head-center .sub { margin-inline: auto; }
+
+/* ––––– Product window ––––– */
+.stagebox { background: var(–wine); border-radius: var(–r-lg); padding: clamp(14px, 3vw, 40px); width: min(1320px, 100% - 24px); margin-inline: auto; margin-top: clamp(40px, 5vw, 64px); }
+.window { background: var(–bg); border-radius: var(–r-md); overflow: hidden; box-shadow: 0 40px 80px -40px rgba(0,0,0,.7); }
+.wbar { display: flex; align-items: center; gap: 12px; padding: 8px 18px; background: var(–mist); border-bottom: 1px solid var(–line); }
+.wbar .brand { font-size: 15px; }
+.wbar .brand svg { width: 28px; height: 28px; }
+.wbar .icons { margin-inline: auto; display: flex; gap: 6px; color: var(–brand); }
+@media (prefers-color-scheme: dark) { .wbar .icons { color: #f2bcbc; } }
+.wbar .icons span { width: 40px; height: 40px; display: grid; place-items: center; }
+.wbar .icons svg { width: 19px; height: 19px; }
+.wbody { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); min-height: 520px; }
+.chat { padding: clamp(20px, 3vw, 36px); display: flex; flex-direction: column; gap: 14px; border-right: 1px solid var(–line); }
+.bubble { max-width: 92%; font-size: 16px; line-height: 1.45; }
+.bubble.bot { color: var(–brand); font-weight: 650; }
+@media (prefers-color-scheme: dark) { .bubble.bot { color: #f2bcbc; } }
+.bubble.me { align-self: flex-end; background: var(–mist); padding: 11px 16px; border-radius: 18px 18px 4px 18px; min-height: 48px; }
+.tags { display: flex; flex-wrap: wrap; gap: 8px; min-height: 34px; }
+.tag { display: inline-flex; align-items: center; min-height: 32px; padding: 0 12px; border-radius: 8px; background: var(–brand); color: #fff; font-size: 14px; font-weight: 650; }
+.tag.empty { background: transparent; color: var(–muted); border: 1px dashed var(–line); font-weight: 600; }
+.status { font-size: 15px; color: var(–muted); }
+.compose { margin-top: auto; display: flex; align-items: center; gap: 8px; border: 1px solid var(–line); border-radius: 999px; padding: 6px 8px 6px 18px; color: var(–muted); font-size: 15px; }
+.compose svg { width: 18px; height: 18px; margin-left: auto; color: var(–brand); }
+.list { padding: clamp(16px, 2.4vw, 28px); display: flex; flex-direction: column; gap: 14px; }
+.row { display: grid; grid-template-columns: 168px minmax(0, 1fr); gap: 18px; padding: 12px; border: 1px solid var(–line); border-radius: 18px; align-items: stretch; }
+.row.first { border-color: var(–brand); }
+.row .ph { position: relative; border-radius: 12px; overflow: hidden; min-height: 120px; }
+.row .ph svg { width: 100%; height: 100%; }
+.row h3 { font-size: 1.1rem; line-height: 1.25; letter-spacing: -.01em; }
+.row .meta { font-size: .95rem; color: var(–muted); margin-top: 2px; }
+.row .price { font-size: 1.3rem; font-weight: 750; letter-spacing: -.015em; margin-top: 8px; }
+.match { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.match li { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 10px; border-radius: 999px; font-size: 13px; font-weight: 600; background: var(–mist); }
+.match svg { width: 14px; height: 14px; }
+.match .ok svg { color: #1f7a45; }
+.match .no { color: var(–muted); }
+.match .no svg { color: var(–muted); }
+.heart { position: absolute; top: 8px; right: 8px; width: 40px; height: 40px; border-radius: 50%; border: 0; background: rgba(255,255,255,.94); color: var(–brand); display: grid; place-items: center; cursor: pointer; }
+.heart svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; }
+.heart[aria-pressed=“true”] svg { fill: currentColor; }
+.demo-note { margin-top: 18px; text-align: center; font-size: .9rem; color: rgba(255,255,255,.62); }
+
+/* reveal for the demo: a single orchestrated moment */
+.js .reveal { opacity: 0; transform: translateY(10px); transition: opacity .5s ease, transform .5s ease; }
+.js .reveal.in { opacity: 1; transform: none; }
+
+/* ––––– Bento ––––– */
+.bento { margin-top: clamp(36px, 5vw, 64px); display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+.tile { border-radius: var(–r-md); padding: clamp(22px, 2.6vw, 34px); display: flex; flex-direction: column; gap: 10px; min-height: 300px; position: relative; overflow: hidden; }
+.tile h3 { font-size: 1.35rem; line-height: 1.2; letter-spacing: -.02em; font-weight: 700; }
+.tile p { color: inherit; opacity: .78; font-size: 1rem; max-width: 26em; }
+.t-a { grid-column: span 7; background: var(–mist); }
+.t-b { grid-column: span 5; background: var(–brand); color: #fff; }
+.t-c { grid-column: span 4; background: var(–bg); border: 1px solid var(–line); }
+.t-d { grid-column: span 4; background: var(–wine); color: #fff; }
+.t-e { grid-column: span 4; background: var(–mist); }
+.say { margin-top: auto; align-self: flex-start; background: var(–bg); border-radius: 20px 20px 20px 4px; padding: 14px 18px; font-size: 1.05rem; font-weight: 550; max-width: 30em; box-shadow: 0 16px 30px -22px rgba(58,10,14,.5); }
+.say + .tags { margin-top: 12px; }
+.reasons { margin: auto 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.reasons li { display: flex; gap: 10px; align-items: center; background: rgba(255,255,255,.12); border-radius: 12px; padding: 10px 14px; font-size: .98rem; font-weight: 550; }
+.reasons svg { width: 18px; height: 18px; flex: none; }
+.map { margin: auto -34px -34px; }
+.map svg { width: 100%; height: auto; }
+.favs { margin-top: auto; display: flex; gap: 10px; }
+.fav { flex: 1; aspect-ratio: 1; border-radius: 14px; overflow: hidden; position: relative; }
+.fav svg.pic { width: 100%; height: 100%; }
+.fav .h { position: absolute; right: 6px; top: 6px; width: 26px; height: 26px; border-radius: 50%; background: #fff; color: var(–brand); display: grid; place-items: center; }
+.fav .h svg { width: 14px; height: 14px; fill: currentColor; }
+.asks { margin-top: auto; display: flex; flex-wrap: wrap; gap: 8px; }
+.asks span { display: inline-flex; align-items: center; min-height: 38px; padding: 0 16px; border-radius: 999px; background: var(–bg); font-size: 15px; font-weight: 600; box-shadow: 0 10px 22px -16px rgba(58,10,14,.5); }
+
+/* ––––– Steps ––––– */
+.steps { margin: clamp(40px, 5vw, 72px) 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(20px, 4vw, 56px); position: relative; }
+.steps::before { content: “”; position: absolute; left: 14px; right: 14px; top: 14px; height: 2px; background: var(–line); }
+.steps li { position: relative; padding-top: 52px; }
+.steps li::before { content: “”; position: absolute; top: 4px; left: 0; width: 22px; height: 22px; border-radius: 50%; background: var(–bg); border: 3px solid var(–brand); }
+.steps h3 { font-size: 1.3rem; letter-spacing: -.015em; margin-bottom: 8px; }
+.steps p { color: var(–muted); font-size: 1rem; max-width: 24em; }
+
+/* ––––– CTA ––––– */
+.cta-panel { position: relative; overflow: hidden; background: var(–brand); color: #fff; border-radius: var(–r-lg); width: min(1320px, 100% - 24px); margin-inline: auto; padding: clamp(48px, 8vw, 112px) clamp(24px, 5vw, 80px); text-align: center; }
+.cta-panel svg.bg { position: absolute; left: 50%; top: 50%; width: 150%; max-width: none; transform: translate(-50%, -50%); pointer-events: none; }
+.cta-panel > *:not(.bg) { position: relative; }
+.cta-panel h2 { margin-inline: auto; }
+.cta-panel p { margin: 16px auto 32px; max-width: 30em; color: rgba(255,255,255,.84); }
+.cta-panel .ask { margin-inline: auto; text-align: left; }
+.cta-section { padding-top: 0; }
+
+footer { padding-block: 40px 48px; font-size: .95rem; color: var(–muted); }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: center; justify-content: space-between; border-top: 1px solid var(–line); padding-top: 32px; }
+footer ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 24px; flex-wrap: wrap; }
+footer a { text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+
+/* ––––– Responsive ––––– */
+@media (max-width: 1000px) {
+.hero-grid { grid-template-columns: minmax(0, 1fr); }
+.orbit { width: min(78vw, 420px); margin: 12px auto 0; }
+.wbody { grid-template-columns: minmax(0, 1fr); }
+.chat { border-right: 0; border-bottom: 1px solid var(–line); }
+.t-a, .t-b { grid-column: span 12; }
+.t-c, .t-d, .t-e { grid-column: span 6; }
+.t-e { grid-column: span 12; }
+.pill nav a span { display: none; }
+.pill nav a { padding: 0 12px; }
+}
+@media (max-width: 640px) {
+body { font-size: 17px; }
+.pill { padding-left: 16px; gap: 8px; }
+.brand span { display: none; }
+.pill .btn { display: none; }
+.lang { margin-left: auto; }
+.ask-field { padding-left: 18px; }
+.ask-field .btn { padding: 0 18px; }
+.node { display: none; }
+.row { grid-template-columns: minmax(0, 1fr); }
+.row .ph { min-height: 0; aspect-ratio: 16 / 10; }
+.t-c, .t-d { grid-column: span 12; }
+.tile { min-height: 260px; }
+.steps { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+.steps::before { left: 10px; right: auto; top: 10px; bottom: 10px; width: 2px; height: auto; }
+.steps li { padding: 0 0 0 44px; }
+.steps li::before { top: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+.ring svg { animation: none; }
+html { scroll-behavior: auto; }
+.btn, .js .reveal { transition: none; }
+}
+</style>
+
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="seal" viewBox="0 0 40 40">
+    <circle cx="20" cy="20" r="17.5" fill="none" stroke="currentColor" stroke-width="2.5"/>
+    <path d="M20 9.5l3.2 6.6 7.2 1-5.2 5.1 1.2 7.2L20 25.9l-6.4 3.5 1.2-7.2-5.2-5.1 7.2-1z" fill="currentColor"/>
+  </symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.500l4.500 4.500L19 7.500" fill="none" stroke="currentColor" stroke-width="2.600" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M6 12h12" fill="none" stroke="currentColor" stroke-width="2.600" stroke-linecap="round"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.500-4.600-7.500-10A4.300 4.300 0 0 1 12 7.600 4.300 4.300 0 0 1 19.500 10c0 5.400-7.500 10-7.500 10z" stroke-linejoin="round"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.200" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+
+  <symbol id="f-a" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+    <rect width="400" height="300" fill="#e9d9d4"/><rect y="226" width="400" height="74" fill="#c8a9a1"/>
+    <rect x="80" y="36" width="240" height="214" fill="#f6ece7"/>
+    <g fill="#8c1515" opacity=".9"><rect x="104" y="60" width="38" height="48" rx="3"/><rect x="181" y="60" width="38" height="48" rx="3"/><rect x="258" y="60" width="38" height="48" rx="3"/><rect x="104" y="132" width="38" height="48" rx="3"/><rect x="181" y="132" width="38" height="48" rx="3"/><rect x="258" y="132" width="38" height="48" rx="3"/></g>
+    <rect x="174" y="196" width="52" height="54" rx="3" fill="#3a0a0e"/>
+  </symbol>
+  <symbol id="f-b" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+    <rect width="400" height="300" fill="#efe2dc"/><rect x="36" y="80" width="150" height="220" fill="#cfaaa1"/><rect x="198" y="24" width="168" height="276" fill="#f8efea"/>
+    <g fill="#3a0a0e" opacity=".82"><rect x="58" y="104" width="30" height="36"/><rect x="104" y="104" width="30" height="36"/><rect x="150" y="104" width="20" height="36"/><rect x="58" y="160" width="30" height="36"/><rect x="104" y="160" width="30" height="36"/><rect x="150" y="160" width="20" height="36"/><rect x="58" y="216" width="30" height="36"/><rect x="104" y="216" width="30" height="36"/><rect x="150" y="216" width="20" height="36"/>
+    <rect x="220" y="50" width="30" height="38"/><rect x="268" y="50" width="30" height="38"/><rect x="316" y="50" width="30" height="38"/><rect x="220" y="108" width="30" height="38"/><rect x="268" y="108" width="30" height="38"/><rect x="316" y="108" width="30" height="38"/><rect x="220" y="166" width="30" height="38"/><rect x="268" y="166" width="30" height="38"/><rect x="316" y="166" width="30" height="38"/></g>
+  </symbol>
+  <symbol id="f-c" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+    <rect width="400" height="300" fill="#f1e4da"/><circle cx="318" cy="68" r="32" fill="#f7cfae"/>
+    <rect x="30" y="112" width="340" height="188" fill="#a2312c"/><rect x="30" y="112" width="340" height="22" fill="#6a0f12"/>
+    <g fill="#fbefe6"><rect x="62" y="158" width="54" height="68" rx="27 27 3 3"/><rect x="173" y="158" width="54" height="68" rx="27 27 3 3"/><rect x="284" y="158" width="54" height="68" rx="27 27 3 3"/></g>
+  </symbol>
+</svg>
+
+<header class="top">
+  <div class="wrap">
+    <div class="pill">
+      <a class="brand" href="#top" aria-label="Nexus Home, на главную"><svg aria-hidden="true"><use href="#seal"/></svg><span>Nexus Home</span></a>
+      <nav aria-label="Основная навигация">
+        <ul>
+          <li><a href="#how"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.500v.01"/></svg><span>О проекте</span></a></li>
+          <li><a href="#ask-form"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Поиск</span></a></li>
+          <li><a href="#features"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7.500-4.600-7.500-10A4.300 4.300 0 0 1 12 7.600 4.300 4.300 0 0 1 19.500 10c0 5.400-7.500 10-7.500 10z"/></svg><span>Избранное</span></a></li>
+          <li><a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="10" r="3"/><path d="M6.500 18c1.500-2.500 3.300-3.500 5.500-3.500s4 1 5.500 3.500"/></svg><span>Профиль</span></a></li>
+        </ul>
+      </nav>
+      <button class="lang" type="button" aria-label="Язык: русский"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>RU</button>
+      <a class="btn btn-brand btn-sm" href="#ask-form">Начать поиск</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-grid">
+      <div>
+        <h1>Опишите дом мечты. <span style="white-space:nowrap">Nexus Home</span> найдёт его.</h1>
+        <p class="lead">ИИ-ассистент по подбору недвижимости. Говорите обычными словами, а он разберётся в районах, бюджете и во всём, что должно быть рядом.</p>
+        <form class="ask" id="ask-form" autocomplete="off">
+          <div class="ask-field">
+            <label class="sr" for="ask">Что вам подобрать?</label>
+            <input id="ask" type="text" placeholder="Например: 3 комнаты в центре, до 40 млн" enterkeyhint="search">
+            <button class="btn btn-brand" type="submit">Подобрать</button>
+          </div>
+          <div class="chips" id="chips">
+            <button class="chip" type="button">3 комнаты в центре Москвы до 40 млн</button>
+            <button class="chip" type="button">Рядом с детским садом</button>
+            <button class="chip" type="button">Студия у метро</button>
+          </div>
+        </form>
+      </div>
+
+```
+  <div class="orbit" aria-hidden="true">
+    <svg class="orbit-lines" viewBox="0 0 1000 1000" fill="none" stroke="#fff">
+      <circle cx="500" cy="500" r="190" stroke-opacity=".20"/>
+      <circle cx="500" cy="500" r="270" stroke-opacity=".14"/>
+      <circle cx="500" cy="500" r="350" stroke-opacity=".10"/>
+      <circle cx="500" cy="500" r="430" stroke-opacity=".07"/>
+    </svg>
+    <div class="ring">
+      <svg viewBox="0 0 400 400">
+        <defs><path id="circ" d="M200 200 m-150 0 a150 150 0 1 1 300 0 a150 150 0 1 1 -300 0"/></defs>
+        <text><textPath href="#circ" textLength="936" lengthAdjust="spacing">Добро пожаловать в поиск будущего </textPath></text>
+      </svg>
+    </div>
+    <div class="seal"><svg><use href="#seal"/></svg></div>
+    <span class="node n1">3 комнаты</span>
+    <span class="node n2">До 40 млн ₽</span>
+    <span class="node n3">Рядом детский сад</span>
+  </div>
+</div>
+```
+
+  </div>
+
+  <!-- Product window -->
+
+  <div class="stagebox" id="demo">
+    <div class="window" role="group" aria-label="Пример работы Nexus Home">
+      <div class="wbar">
+        <span class="brand"><svg aria-hidden="true"><use href="#seal"/></svg><span>Nexus Home</span></span>
+        <div class="icons" aria-hidden="true">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg></span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="10" r="3"/><path d="M6.500 18c1.500-2.500 3.300-3.500 5.500-3.500s4 1 5.500 3.500"/></svg></span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><use href="#i-heart"/></svg></span>
+        </div>
+      </div>
+      <div class="wbody">
+        <div class="chat" aria-live="polite">
+          <p class="bubble bot">Здравствуйте! Я ваш ИИ ассистент по подбору недвижимости. Опишите мне, что я могу для вас найти</p>
+          <p class="bubble me" id="me"></p>
+          <div class="tags" id="tags" aria-label="Что понял ассистент"></div>
+          <p class="status reveal" id="status">Нашёл 3 варианта. Первый подходит лучше всего.</p>
+          <div class="compose" aria-hidden="true">Уточните запрос<svg><use href="#i-send"/></svg></div>
+        </div>
+        <div class="list">
+          <article class="row first reveal">
+            <div class="ph"><svg aria-hidden="true"><use href="#f-b"/></svg>
+              <button class="heart" type="button" aria-pressed="false" aria-label="Добавить квартиру в Хамовниках в избранное"><svg viewBox="0 0 24 24"><use href="#i-heart"/></svg></button></div>
+            <div>
+              <h3>Квартира в Москве, Хамовники</h3>
+              <p class="meta">80 м² · 3 комнаты · 7 этаж из 12</p>
+              <p class="price">38 500 000 ₽</p>
+              <ul class="match" aria-label="Совпадение с запросом">
+                <li class="ok"><svg><use href="#i-check"/></svg>Центр</li>
+                <li class="ok"><svg><use href="#i-check"/></svg>3 комнаты</li>
+                <li class="ok"><svg><use href="#i-check"/></svg>Детский сад 4 мин</li>
+                <li class="no"><svg><use href="#i-minus"/></svg>Нет балкона</li>
+              </ul>
+            </div>
+          </article>
+          <article class="row reveal">
+            <div class="ph"><svg aria-hidden="true"><use href="#f-c"/></svg>
+              <button class="heart" type="button" aria-pressed="false" aria-label="Добавить квартиру на Остоженке в избранное"><svg viewBox="0 0 24 24"><use href="#i-heart"/></svg></button></div>
+            <div>
+              <h3>Остоженка</h3>
+              <p class="meta">74 м² · 3 комнаты · 4 этаж из 9</p>
+              <p class="price">36 900 000 ₽</p>
+              <ul class="match" aria-label="Совпадение с запросом">
+                <li class="ok"><svg><use href="#i-check"/></svg>Центр</li>
+                <li class="ok"><svg><use href="#i-check"/></svg>3 комнаты</li>
+                <li class="no"><svg><use href="#i-minus"/></svg>Сад в 12 мин</li>
+              </ul>
+            </div>
+          </article>
+          <article class="row reveal">
+            <div class="ph"><svg aria-hidden="true"><use href="#f-a"/></svg>
+              <button class="heart" type="button" aria-pressed="false" aria-label="Добавить квартиру на Чистых прудах в избранное"><svg viewBox="0 0 24 24"><use href="#i-heart"/></svg></button></div>
+            <div>
+              <h3>Чистые пруды</h3>
+              <p class="meta">82 м² · 3 комнаты · 5 этаж из 8</p>
+              <p class="price">39 800 000 ₽</p>
+              <ul class="match" aria-label="Совпадение с запросом">
+                <li class="ok"><svg><use href="#i-check"/></svg>Центр</li>
+                <li class="ok"><svg><use href="#i-check"/></svg>3 комнаты</li>
+                <li class="ok"><svg><use href="#i-check"/></svg>Детский сад 6 мин</li>
+              </ul>
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+    <p class="demo-note">Демонстрация макета. Объекты и цены показаны для примера.</p>
+  </div>
+
+  <!-- Features -->
+
+  <section id="features">
+    <div class="wrap">
+      <div class="head-center">
+        <h2>Поиск, который понимает, что для вас важно</h2>
+        <p class="sub">Никаких фильтров и ползунков. Вы описываете жизнь, которую хотите, а Nexus Home переводит это в квартиры.</p>
+      </div>
+      <div class="bento">
+        <article class="tile t-a">
+          <h3>Говорите как есть</h3>
+          <p>Пишите так, как рассказали бы другу. Ассистент сам выделит район, комнаты и бюджет.</p>
+          <div class="say">Хочу квартиру в центре, три комнаты, чтобы рядом был детский сад, и не дороже 40 миллионов</div>
+          <div class="tags"><span class="tag">Центр</span><span class="tag">3 комнаты</span><span class="tag">Детский сад рядом</span><span class="tag">До 40 млн ₽</span></div>
+        </article>
+        <article class="tile t-b">
+          <h3>Объясняет каждый выбор</h3>
+          <p>К каждой квартире видно, что совпало с вашими пожеланиями, а чего не хватает.</p>
+          <ul class="reasons">
+            <li><svg><use href="#i-check"/></svg>Три комнаты, 80 м²</li>
+            <li><svg><use href="#i-check"/></svg>Детский сад в 4 минутах пешком</li>
+            <li><svg><use href="#i-minus"/></svg>Балкона нет</li>
+          </ul>
+        </article>
+        <article class="tile t-c">
+          <h3>Всё рядом на карте</h3>
+          <p>Транспорт, школы и сады возле квартиры.</p>
+          <div class="map" aria-hidden="true">
+            <svg viewBox="0 0 400 230">
+              <rect width="400" height="230" fill="#efe7e6"/>
+              <path d="M-10 170 C80 140 140 200 230 160 S360 120 420 140" stroke="#d3dde2" stroke-width="26" fill="none"/>
+              <g stroke="#fff" stroke-width="9" fill="none" stroke-linecap="round"><path d="M0 70h400"/><path d="M120 0v230"/><path d="M280 0v230"/><path d="M0 200L400 40" stroke-width="6"/></g>
+              <g fill="#e4d9d8"><rect x="140" y="86" width="120" height="60" rx="6"/><rect x="300" y="86" width="80" height="50" rx="6"/><rect x="20" y="20" width="80" height="34" rx="6"/></g>
+              <circle cx="200" cy="116" r="62" fill="#8c1515" fill-opacity=".10" stroke="#8c1515" stroke-dasharray="5 5"/>
+              <circle cx="200" cy="116" r="11" fill="#8c1515"/><circle cx="200" cy="116" r="4" fill="#fff"/>
+              <g fill="#3a0a0e"><circle cx="164" cy="82" r="6"/><circle cx="240" cy="148" r="6"/><circle cx="318" cy="60" r="6"/></g>
+            </svg>
+          </div>
+        </article>
+        <article class="tile t-d">
+          <h3>Избранное под рукой</h3>
+          <p>Отмечайте сердечком и возвращайтесь к лучшему.</p>
+          <div class="favs" aria-hidden="true">
+            <div class="fav"><svg class="pic"><use href="#f-b"/></svg><span class="h"><svg viewBox="0 0 24 24"><use href="#i-heart"/></svg></span></div>
+            <div class="fav"><svg class="pic"><use href="#f-c"/></svg><span class="h"><svg viewBox="0 0 24 24"><use href="#i-heart"/></svg></span></div>
+            <div class="fav"><svg class="pic"><use href="#f-a"/></svg><span class="h"><svg viewBox="0 0 24 24"><use href="#i-heart"/></svg></span></div>
+          </div>
+        </article>
+        <article class="tile t-e">
+          <h3>Уточняйте по ходу</h3>
+          <p>Не подошло? Скажите, что изменить.</p>
+          <div class="asks" aria-hidden="true"><span>Подешевле</span><span>Больше света</span><span>С балконом</span><span>Больше вариантов</span></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- How -->
+
+  <section id="how" style="padding-top:0">
+    <div class="wrap">
+      <div class="head-center"><h2>Три шага до квартиры, которая подходит</h2></div>
+      <ol class="steps">
+        <li><h3>Опишите, что ищете</h3><p>Одной фразой или подробно. Ассистент задаст уточняющие вопросы, если чего-то не хватает.</p></li>
+        <li><h3>Получите варианты</h3><p>Каждый вариант сопровождается объяснением, чем он подходит и что стоит учесть.</p></li>
+        <li><h3>Сохраните лучшее</h3><p>Складывайте понравившиеся в избранное и просите больше вариантов, пока не найдёте своё.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- CTA -->
+
+  <section class="cta-section">
+    <div class="cta-panel">
+      <svg class="bg" viewBox="0 0 1000 1000" fill="none" stroke="#fff" aria-hidden="true">
+        <circle cx="500" cy="500" r="190" stroke-opacity=".18"/><circle cx="500" cy="500" r="290" stroke-opacity=".12"/><circle cx="500" cy="500" r="390" stroke-opacity=".08"/><circle cx="500" cy="500" r="490" stroke-opacity=".05"/>
+      </svg>
+      <h2>Начните с одной фразы</h2>
+      <p>Опишите, какая квартира вам нужна, и посмотрите, что предложит Nexus Home.</p>
+      <form class="ask" id="ask-form-2" autocomplete="off">
+        <div class="ask-field">
+          <label class="sr" for="ask2">Что вам подобрать?</label>
+          <input id="ask2" type="text" placeholder="Например: студия у метро" enterkeyhint="search">
+          <button class="btn btn-brand" type="submit">Подобрать</button>
+        </div>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Nexus Home, наверх"><svg aria-hidden="true"><use href="#seal"/></svg><span>Nexus Home</span></a>
+    <ul>
+      <li><a href="#how">О проекте</a></li>
+      <li><a href="#features">Возможности</a></li>
+      <li><a href="#">Контакты</a></li>
+      <li><a href="#">Политика конфиденциальности</a></li>
+    </ul>
+  </div>
+</footer>
+
+<script>
+  document.documentElement.classList.add('js');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const me = document.getElementById('me');
+  const tagsEl = document.getElementById('tags');
+  const reveals = [...document.querySelectorAll('.reveal')];
+  let typingTimer = null;
+
+  // Simple parser so the demo reacts to what the visitor types.
+  function parse(text) {
+    const t = text.toLowerCase(), out = [];
+    const rooms = t.match(/(\d+)\s*(?:-?\s*к|комн)/) || t.match(/(студи)/);
+    if (rooms) out.push(rooms[1] === 'студи' ? 'Студия' : rooms[1] + ' комн.');
+    const budget = t.match(/(?:до|не дороже)\s*(\d+(?:[.,]\d+)?)\s*(?:млн|миллион)/);
+    if (budget) out.push('До ' + budget[1].replace(',', '.') + ' млн ₽');
+    if (/центр/.test(t)) out.push('Центр Москвы');
+    if (/метро/.test(t)) out.push('У метро');
+    if (/(детск\w* сад|садик)/.test(t)) out.push('Рядом детский сад');
+    if (/школ/.test(t)) out.push('Рядом школа');
+    return out;
+  }
+
+  function renderTags(text, animate) {
+    const found = parse(text);
+    tagsEl.replaceChildren();
+    const make = (label, cls) => { const s = document.createElement('span'); s.className = cls; s.textContent = label; return s; };
+    if (!found.length) { tagsEl.append(make('Добавьте район, комнаты или бюджет', 'tag empty')); return; }
+    found.forEach((label, i) => {
+      const s = make(label, 'tag');
+      if (animate && !reduce) { s.style.opacity = 0; setTimeout(() => { s.style.transition = 'opacity .3s'; s.style.opacity = 1; }, 120 * i); }
+      tagsEl.append(s);
+    });
+  }
+
+  function showResults(on) { reveals.forEach((el, i) => setTimeout(() => el.classList.toggle('in', on), on && !reduce ? 160 * i : 0)); }
+
+  function say(text, animate) {
+    clearTimeout(typingTimer);
+    me.textContent = '';
+    tagsEl.replaceChildren();
+    showResults(false);
+    if (!animate || reduce) { me.textContent = text; renderTags(text, false); showResults(true); return; }
+    let i = 0;
+    (function step() {
+      me.textContent = text.slice(0, ++i);
+      if (i < text.length) typingTimer = setTimeout(step, 22);
+      else { renderTags(text, true); setTimeout(() => showResults(true), 350); }
+    })();
+  }
+
+  const initial = 'Квартира 3 комнаты рядом с детским садом, в центре Москвы, не дороже 40 миллионов';
+  // Play the demo once when it scrolls into view.
+  let played = false;
+  const demo = document.getElementById('demo');
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver((es, o) => { if (es[0].isIntersecting && !played) { played = true; say(initial, true); o.disconnect(); } }, { threshold: .35 }).observe(demo);
+  } else { played = true; say(initial, false); }
+
+  function ask(text) { played = true; document.getElementById('demo').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' }); setTimeout(() => say(text, true), reduce ? 0 : 450); }
+
+  [['ask-form', 'ask'], ['ask-form-2', 'ask2']].forEach(([f, i]) => {
+    document.getElementById(f).addEventListener('submit', e => { e.preventDefault(); const v = document.getElementById(i).value.trim(); if (v) ask(v); });
+  });
+  document.getElementById('chips').addEventListener('click', e => {
+    const c = e.target.closest('.chip'); if (!c) return;
+    document.getElementById('ask').value = c.textContent; ask(c.textContent);
+  });
+
+  document.querySelectorAll('.heart').forEach(b => b.addEventListener('click', () => {
+    const on = b.getAttribute('aria-pressed') !== 'true';
+    b.setAttribute('aria-pressed', on);
+    const l = b.getAttribute('aria-label');
+    b.setAttribute('aria-label', on ? l.replace('Добавить', 'Убрать').replace(' в избранное', ' из избранного') : l.replace('Убрать', 'Добавить').replace(' из избранного', ' в избранное'));
+  }));
+</script>
+
+</body>
+</html>
